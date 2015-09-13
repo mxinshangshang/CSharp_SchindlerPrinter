@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="schindlerPrint.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SamplePathSetting" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Users\jiang\Desktop\迅达2\</Value>
+    </Setting>
+    <Setting Name="ExcelPathSetting" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\Users\jiang\Desktop\迅达2\</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
