@@ -6,7 +6,7 @@
       <Value Profile="(Default)">C:\Users\jiang\Desktop\迅达2\</Value>
     </Setting>
     <Setting Name="ExcelPathSetting" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\Users\jiang\Desktop\迅达2\</Value>
+      <Value Profile="(Default)">C:\Users\jiang\Desktop\</Value>
     </Setting>
   </Settings>
 </SettingsFile>

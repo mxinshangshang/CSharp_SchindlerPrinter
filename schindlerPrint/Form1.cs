@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
-using System.IO.Ports;
 using System.Data.OleDb;
 using System.Drawing.Printing;
-using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace schindlerPrint
 {
@@ -20,14 +13,13 @@ namespace schindlerPrint
         private string SamplePath;
         private string ExcelPath;
         private DataSet myDataSet;
-        private string[,] Prm;
 
         public Form1()
         {
             InitializeComponent();
 
             PrintDocument print = new PrintDocument();
-            string sDefault = print.PrinterSettings.PrinterName;               //默认打印机名
+            string sDefault = print.PrinterSettings.PrinterName;               //获取默认打印机名
             comboBox1.Text = sDefault;
 
             foreach (string sPrint in PrinterSettings.InstalledPrinters)       //获取打印机列表
@@ -36,6 +28,7 @@ namespace schindlerPrint
                 if (sPrint == sDefault)
                     comboBox1.SelectedIndex = comboBox1.Items.IndexOf(sPrint);
             }
+            textBox1.Text = "59410916";
         }
 
         private void 模板路径设置ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -64,19 +57,32 @@ namespace schindlerPrint
             Properties.Settings.Default.Save();
         }
 
-        private void GetPrn()                                                   //读入Prn内容
+        private string GetPrn(string[] Prm)                                                   //整合Prn内容
         {
             SamplePath = Properties.Settings.Default.SamplePathSetting;
             string path = SamplePath + "/";
             string[] text = File.ReadAllLines(path + "/" + "area.prn");
+
+            for (int u = 0; u < text.Length; u++)
+            {
+                if (text[u].Contains("area"))
+                {
+                    int s = Int32.Parse(Regex.Match(text[u], @"area([\s\S]*?)""").Groups[1].Value);
+                    text[u].Replace(Regex.Match(text[u], @"""([\s\S]*?)""").Groups[1].Value, Prm[s-1]);
+                }
+                else continue;
+            }
+            return string.Join("\r\n", text);
         }
 
-        private void GetExcel()                                              //读入Excel内容
+        private string GetExcel(string target)                                              //读入Excel内容
         {
-            string SamplePath;
-            SamplePath = Properties.Settings.Default.SamplePathSetting;
-            string path = SamplePath + "/";
-            string strCon = " Provider = Microsoft.Jet.OLEDB.4.0 ; Data Source = " + path + "PLC.xls;Extended Properties='Excel 8.0;HDR=NO;IMEX=1;'";    //创建一个数据链接
+            int index = 0;
+            string[] Prm;
+            string cmd;
+            ExcelPath = Properties.Settings.Default.ExcelPathSetting;
+            string path = ExcelPath + "/";
+            string strCon = " Provider = Microsoft.Jet.OLEDB.4.0 ; Data Source = " + path + "AREA.xls;Extended Properties='Excel 8.0;HDR=NO;IMEX=1;'";    //创建一个数据链接
             OleDbConnection myConn = new OleDbConnection(strCon);
             string strCom = " SELECT * FROM [Sheet1$] ";
             //try
@@ -87,19 +93,23 @@ namespace schindlerPrint
             myCommand.Fill(myDataSet, "[Sheet1$]");                                             //得到自己的DataSet对象
             myConn.Close();                                                                     //关闭此数据链接
 
-            Prm = new string[myDataSet.Tables[0].Rows.Count, 8];
+            Prm = new string[myDataSet.Tables[0].Columns.Count];
 
-            for (int i = 0; i < myDataSet.Tables[0].Rows.Count; i++)                            //读取Sheet1里的配置信息
+            for (int i = 0; i < myDataSet.Tables[0].Rows.Count; i++)
             {
-                Prm[i, 0] = myDataSet.Tables[0].Rows[i].ItemArray[2].ToString();            //配置物料的名称
-                Prm[i, 1] = myDataSet.Tables[0].Rows[i].ItemArray[1].ToString();            //配置物料的ID号
-                Prm[i, 2] = myDataSet.Tables[0].Rows[i].ItemArray[3].ToString();            //配置物料第一命令地址
-                Prm[i, 3] = myDataSet.Tables[0].Rows[i].ItemArray[4].ToString();            //配置物料第二命令地址
-                Prm[i, 4] = myDataSet.Tables[0].Rows[i].ItemArray[5].ToString();            //配置物料第三命令地址
-                Prm[i, 5] = myDataSet.Tables[0].Rows[i].ItemArray[6].ToString();            //配置物料测试完成确认地址
-                Prm[i, 6] = myDataSet.Tables[0].Rows[i].ItemArray[7].ToString();            //配置物料线束连接提示
-                Prm[i, 7] = myDataSet.Tables[0].Rows[i].ItemArray[8].ToString();            //配置物料断路器闭合提示
+                if (target == myDataSet.Tables[0].Rows[i].ItemArray[1].ToString())              //获取要打印的ID号所在的行号
+                {
+                    index = i;
+                    break;
+                }
             }
+
+            for (int i = 0; i < myDataSet.Tables[0].Columns.Count; i++)                         //获取ID对应的所有需要打印的信息
+            {
+                Prm[i] = myDataSet.Tables[0].Rows[index].ItemArray[i].ToString();
+            }
+            cmd = GetPrn(Prm);
+            return cmd;
             //}
             //catch (Exception e)
             //{
@@ -109,15 +119,15 @@ namespace schindlerPrint
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //BarCodePrint lpt = new BarCodePrint();
-            //string mycommanglines = File.ReadAllText("area.prn");
-            //lpt.Open();
-            //lpt.Write(mycommanglines);
-            //lpt.Close();
+            string cmd = GetExcel(textBox1.Text)+"\r\n";
+            //ZebraPrintHelper.SendStringToPrinter(comboBox1.Text, cmd);
 
-            string cmd = File.ReadAllText("area.prn");
+            string mycommanglines = File.ReadAllText("area.prn");
+            ZebraPrintHelper.SendStringToPrinter(comboBox1.Text, cmd);
 
-            ZebraPrintHelper.SendFileToPrinter(comboBox1.Text, "area.prn");
+            //string cmd = File.ReadAllText("area.prn");
+            //ZebraPrintHelper.SendFileToPrinter(comboBox1.Text, "area.prn");
+
             //if (!printer.Open())
             //{
             //    MessageBox.Show("未能连接打印机，请确认打印机是否安装正确并接通电源。");
