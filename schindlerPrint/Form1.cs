@@ -68,7 +68,10 @@ namespace schindlerPrint
                 if (text[u].Contains("area"))
                 {
                     int s = Int32.Parse(Regex.Match(text[u], @"area([\s\S]*?)""").Groups[1].Value);
-                    text[u].Replace(Regex.Match(text[u], @"""([\s\S]*?)""").Groups[1].Value, Prm[s-1]);
+                    text[u] = text[u].Replace(Regex.Match(text[u], @"""([\s\S]*?)""").Groups[1].ToString(), Prm[s-1]);
+
+                    //text[u].Replace("A90", "1231231231231");
+                    //string a = Regex.Match(text[u], @"""([\s\S]*?)""").Groups[1].ToString();
                 }
                 else continue;
             }
@@ -122,7 +125,7 @@ namespace schindlerPrint
             string cmd = GetExcel(textBox1.Text)+"\r\n";
             //ZebraPrintHelper.SendStringToPrinter(comboBox1.Text, cmd);
 
-            string mycommanglines = File.ReadAllText("area.prn");
+            //string mycommanglines = File.ReadAllText("area.prn");
             ZebraPrintHelper.SendStringToPrinter(comboBox1.Text, cmd);
 
             //string cmd = File.ReadAllText("area.prn");
